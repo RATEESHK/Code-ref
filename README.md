@@ -43,11 +43,17 @@ A comprehensive, production-ready Git hooks system that enforces Git Flow branch
   - [Using git-flow CLI Tool](#using-git-flow-cli-tool)
   - [Integration with This Hook System](#integration-with-this-hook-system)
   - [GitHub Actions Automation](#github-actions-automation)
+    - [Complete Automation Setup](#complete-automation-setup)
+    - [Setup Instructions](#setup-instructions)
+    - [What Gets Automated](#what-gets-automated)
+    - [Customization Options](#customization-options)
+  - [GitLab CI Automation](#gitlab-ci-automation)
 - [Server-Side Git Flow Enforcement with Harness CI/CD](#server-side-git-flow-enforcement-with-harness-cicd)
   - [Why Server-Side Enforcement with Harness?](#why-server-side-enforcement-with-harness)
   - [Harness Git Flow Architecture](#harness-git-flow-architecture)
   - [Harness Setup - Complete Guide](#harness-setup---complete-guide)
   - [Harness Pipeline Templates for Git Flow](#harness-pipeline-templates-for-git-flow)
+  - [Harness Git Flow Automation Pipelines](#harness-git-flow-automation-pipelines)
   - [Harness Trigger Configurations](#harness-trigger-configurations)
   - [Input Sets for Environments](#input-sets-for-environments)
   - [Server-Side Git Flow Enforcement Strategies](#server-side-git-flow-enforcement-strategies)
@@ -472,6 +478,152 @@ git restore --staged test.txt
 rm test.txt
 ```
 
+#### Step 10: Create Your First Release (Experience Git Flow)
+
+Now that hooks are installed and working, let's walk through creating your first proper release to experience the complete Git Flow cycle.
+
+**Why this step matters**: This gives you hands-on experience with the full Git Flow release process before your first real feature.
+
+```bash
+# 1. Add a few features to develop
+git checkout develop
+git pull origin develop
+
+# Create a simple feature
+git checkout -b feat-PROJ-200-add-version-file develop
+echo "VERSION=0.1.0" > VERSION
+git add VERSION
+git commit -m "feat: PROJ-200 add version tracking file"
+git push -u origin feat-PROJ-200-add-version-file
+
+# Simulate PR merge (in real workflow, merge via PR)
+git checkout develop
+git merge --no-ff feat-PROJ-200-add-version-file -m "Merge feat-PROJ-200-add-version-file into develop"
+git push origin develop
+git branch -d feat-PROJ-200-add-version-file
+git push origin --delete feat-PROJ-200-add-version-file
+
+# 2. Start release process from develop
+git checkout develop
+git pull origin develop
+git checkout -b release-0.2.0 develop
+
+# post-checkout hook validates release branch naming ✓
+# Base branch set to develop ✓
+
+# 3. Bump version in release branch
+echo "VERSION=0.2.0" > VERSION
+git add VERSION
+git commit -m "chore: REL-020 bump version to 0.2.0"
+
+# Create CHANGELOG for this release
+cat > CHANGELOG.md <<EOF
+# Changelog
+
+## [0.2.0] - $(date +%Y-%m-%d)
+
+### Added
+- PROJ-200: Version tracking file
+- PROJ-123: Basic project structure
+- PROJ-002: Git Flow enforcement hooks
+
+### Changed
+- Initial setup completed
+- Git Flow workflow established
+
+EOF
+
+git add CHANGELOG.md
+git commit -m "docs: REL-020 add changelog for v0.2.0"
+
+# 4. Push release branch for team review/QA
+git push -u origin release-0.2.0
+
+# In real workflow: QA tests this branch
+# If bugs found: fix them on release branch with commits
+# For now, we'll proceed assuming QA passed
+
+# 5. Merge release to main (production)
+git checkout main
+git pull origin main
+git merge --no-ff release-0.2.0 -m "Merge release-0.2.0 to main
+
+First proper release using Git Flow:
+- Added version tracking
+- Established project structure
+- Implemented Git Flow hooks
+"
+
+# 6. Tag the release on main
+git tag -a v0.2.0 -m "Release version 0.2.0
+
+First Git Flow release after initial setup.
+
+Features:
+- Version tracking system
+- Project structure (src, tests, docs)
+- Git Flow enforcement hooks installed
+
+This release demonstrates the complete Git Flow process.
+"
+
+# 7. Push main and tags
+git push origin main
+git push origin v0.2.0
+
+# 8. Merge release back to develop (critical step!)
+git checkout develop
+git pull origin develop
+git merge --no-ff release-0.2.0 -m "Merge release-0.2.0 back into develop
+
+Integrating release changes:
+- Version bump to 0.2.0
+- CHANGELOG updates
+"
+
+# 9. Push updated develop
+git push origin develop
+
+# 10. Delete release branch (no longer needed)
+git branch -d release-0.2.0
+git push origin --delete release-0.2.0
+
+# 11. Verify release
+git log --oneline --graph --all --decorate | head -20
+# Shows merge commits and v0.2.0 tag
+
+git tag
+# Output:
+# v0.1.0
+# v0.2.0
+
+# 12. Check branch status
+git checkout develop
+git log --oneline -3
+# Shows release merge commit
+
+git checkout main
+git log --oneline -3
+# Shows release merge commit and tag
+```
+
+**What You Just Learned**:
+- ✅ Creating release branch from develop
+- ✅ Version bumping and changelog generation
+- ✅ Merging release to main (production)
+- ✅ Tagging releases with semantic versions
+- ✅ Merging release back to develop (no history loss!)
+- ✅ Cleaning up release branches
+- ✅ Complete Git Flow release cycle
+
+**Next releases** will follow the same pattern:
+1. Develop features on `feat-*` branches
+2. Merge features to `develop`
+3. Create `release-X.Y.Z` from `develop`
+4. Test, fix bugs, bump version
+5. Merge to `main`, tag, merge back to `develop`
+6. Delete release branch
+
 #### Summary: You Now Have
 
 ✅ `main` branch with initial commit and tag (`v0.1.0`)
@@ -480,6 +632,9 @@ rm test.txt
 ✅ Git hooks installed and working
 ✅ First feature branch created successfully
 ✅ Validated that hooks catch violations
+✅ **Completed first Git Flow release (v0.2.0)**
+✅ **Experienced complete release cycle hands-on**
+✅ **Both main and develop in sync with no history loss**
 
 ---
 
@@ -709,6 +864,102 @@ git checkout develop
 git branch -D feat-PROJ-124-test-feature
 ```
 
+#### Step 9: Create First Release (Complete Git Flow Experience)
+
+Now let's create your first release to complete the Git Flow learning experience:
+
+```bash
+# 1. Merge the test feature to develop (simulate completed feature)
+git checkout develop
+git merge --no-ff feat-PROJ-123-add-authentication -m "Merge feat-PROJ-123-add-authentication into develop"
+git push origin develop
+
+# Delete feature branch
+git branch -d feat-PROJ-123-add-authentication
+git push origin --delete feat-PROJ-123-add-authentication
+
+# 2. Create release branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b release-1.0.0 develop
+
+# 3. Update version (assuming you have package.json or similar)
+# If starting fresh, create a version file
+echo '{"version": "1.0.0"}' > package.json
+git add package.json
+git commit -m "chore: REL-100 bump version to 1.0.0"
+
+# 4. Create or update CHANGELOG
+cat > CHANGELOG.md <<EOF
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [1.0.0] - $(date +%Y-%m-%d)
+
+### Added
+- PROJ-123: Authentication module
+- Git Flow enforcement hooks
+- Initial project setup
+
+### Infrastructure
+- CI/CD pipeline configuration
+- Branch protection rules
+- Development workflow established
+
+EOF
+
+git add CHANGELOG.md
+git commit -m "docs: REL-100 add changelog for v1.0.0"
+
+# 5. Push release branch
+git push -u origin release-1.0.0
+
+# 6. After QA approval, merge to main
+git checkout main
+git pull origin main
+git merge --no-ff release-1.0.0 -m "Merge release-1.0.0 to main
+
+First production release with Git Flow process:
+- Authentication system
+- Git Flow hooks enforcement
+- Complete project structure
+"
+
+# 7. Tag the release
+git tag -a v1.0.0 -m "Release version 1.0.0
+
+First production-ready release.
+
+Features:
+- Authentication module
+- Git Flow workflow enforcement
+- Development infrastructure
+
+Marks the completion of initial setup and first feature cycle.
+"
+
+# 8. Push main and tags
+git push origin main
+git push origin v1.0.0
+
+# 9. Merge back to develop (keep develop in sync!)
+git checkout develop
+git pull origin develop
+git merge --no-ff release-1.0.0 -m "Merge release-1.0.0 back into develop"
+git push origin develop
+
+# 10. Clean up release branch
+git branch -d release-1.0.0
+git push origin --delete release-1.0.0
+
+# 11. Verify your work
+echo "✅ Release v1.0.0 complete!"
+git log --oneline --graph --all --decorate -10
+```
+
+**Congratulations!** You've completed your first full Git Flow release cycle.
+
 #### Summary: You Now Have
 
 ✅ Repository cloned from remote
@@ -717,6 +968,8 @@ git branch -D feat-PROJ-124-test-feature
 ✅ Branch protection configured (recommended)
 ✅ Git hooks installed and enforcing rules
 ✅ Ready to create feature branches
+✅ **Completed first Git Flow release (v1.0.0)**
+✅ **Full understanding of release process**
 
 ---
 
@@ -3144,37 +3397,698 @@ git push origin develop
 
 ### GitHub Actions Automation
 
-Automate Git Flow with GitHub Actions:
+Automate your entire Git Flow workflow with GitHub Actions. This section provides production-ready workflows for automatic version bumping, release creation, and merging back to develop.
+
+#### Complete Automation Setup
+
+Create these workflow files in your repository:
+
+**1. Automatic Release Creation with Version Bumping**
 
 ```yaml
 # .github/workflows/release.yml
-name: Release
+name: Create Release
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+      
+      - name: Determine version bump
+        id: version_bump
+        run: |
+          # Analyze commits since last tag
+          COMMITS=$(git log ${{ steps.get_tag.outputs.latest_tag }}..HEAD --pretty=format:"%s")
+          
+          # Determine bump type based on commit messages
+          if echo "$COMMITS" | grep -qE '^(feat|feature)(\(.+\))?!:|^BREAKING CHANGE:'; then
+            BUMP_TYPE="major"
+          elif echo "$COMMITS" | grep -qE '^(feat|feature)(\(.+\))?:'; then
+            BUMP_TYPE="minor"
+          else
+            BUMP_TYPE="patch"
+          fi
+          
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Version bump type: $BUMP_TYPE"
+      
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT_VERSION=${{ steps.get_tag.outputs.latest_tag }}
+          CURRENT_VERSION=${CURRENT_VERSION#v}  # Remove 'v' prefix
+          
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          case "${{ steps.version_bump.outputs.bump_type }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: v$NEW_VERSION"
+      
+      - name: Update version files
+        run: |
+          NEW_VERSION=${{ steps.new_version.outputs.new_version }}
+          
+          # Update package.json if exists
+          if [ -f "package.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" package.json
+            echo "Updated package.json"
+          fi
+          
+          # Update VERSION file if exists
+          if [ -f "VERSION" ]; then
+            echo "$NEW_VERSION" > VERSION
+            echo "Updated VERSION file"
+          fi
+          
+          # Update pyproject.toml if exists (Python)
+          if [ -f "pyproject.toml" ]; then
+            sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" pyproject.toml
+            echo "Updated pyproject.toml"
+          fi
+          
+          # Update Cargo.toml if exists (Rust)
+          if [ -f "Cargo.toml" ]; then
+            sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+            echo "Updated Cargo.toml"
+          fi
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          NEW_VERSION=${{ steps.new_version.outputs.new_version }}
+          PREV_TAG=${{ steps.get_tag.outputs.latest_tag }}
+          
+          echo "# Release v$NEW_VERSION" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Changes since $PREV_TAG" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Group commits by type
+          echo "### Features" >> release_notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^feat" --grep="^feature" >> release_notes.md || true
+          echo "" >> release_notes.md
+          
+          echo "### Bug Fixes" >> release_notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^fix" >> release_notes.md || true
+          echo "" >> release_notes.md
+          
+          echo "### Documentation" >> release_notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^docs" >> release_notes.md || true
+          echo "" >> release_notes.md
+          
+          echo "### Other Changes" >> release_notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --grep="^chore" --grep="^test" --grep="^refactor" >> release_notes.md || true
+          
+          cat release_notes.md
+      
+      - name: Create and push tag
+        run: |
+          NEW_VERSION=${{ steps.new_version.outputs.new_version }}
+          git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.new_version.outputs.new_version }}
+          release_name: Release v${{ steps.new_version.outputs.new_version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+      
+      - name: Notify completion
+        run: |
+          echo "✅ Release v${{ steps.new_version.outputs.new_version }} created successfully!"
+          echo "📝 Changelog generated"
+          echo "🏷️  Tag pushed to repository"
+          echo "📦 GitHub Release created"
+```
+
+**2. Automatic Merge Back to Develop**
+
+```yaml
+# .github/workflows/merge-to-develop.yml
+name: Merge Release to Develop
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-back:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Fetch all branches
+        run: |
+          git fetch origin
+          git branch -a
+      
+      - name: Checkout develop
+        run: |
+          git checkout develop
+          git pull origin develop
+      
+      - name: Merge main into develop
+        id: merge
+        run: |
+          echo "Merging main into develop..."
+          if git merge origin/main --no-ff -m "chore: merge main into develop after release
+
+Automated merge after release was pushed to main.
+Keeps develop in sync with production.
+
+[skip ci]
+"; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+            echo "✅ Merge successful"
+          else
+            echo "merge_status=conflict" >> $GITHUB_OUTPUT
+            echo "❌ Merge conflict detected"
+            git merge --abort
+            exit 1
+          fi
+      
+      - name: Push to develop
+        if: steps.merge.outputs.merge_status == 'success'
+        run: |
+          git push origin develop
+          echo "✅ Successfully merged main into develop"
+      
+      - name: Create PR on conflict
+        if: steps.merge.outputs.merge_status == 'conflict'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto-merge-main-to-develop
+          base: develop
+          title: "🤖 Auto-merge: main → develop (Manual Resolution Required)"
+          body: |
+            ## Automatic Merge Failed
+            
+            This PR was automatically created because merging `main` into `develop` resulted in conflicts.
+            
+            ### Action Required
+            1. Review the conflicts in this PR
+            2. Resolve conflicts locally or via GitHub UI
+            3. Complete the merge
+            
+            ### Commands to resolve locally:
+            ```bash
+            git fetch origin
+            git checkout develop
+            git merge origin/main
+            # Resolve conflicts
+            git add .
+            git commit
+            git push origin develop
+            ```
+            
+            ### Context
+            - Source: `main` branch
+            - Target: `develop` branch
+            - Trigger: Release pushed to main
+            
+            /cc @team-leads
+          labels: |
+            automated
+            merge-conflict
+            high-priority
+```
+
+**3. Feature Branch CI/CD**
+
+```yaml
+# .github/workflows/feature-branch.yml
+name: Feature Branch CI
+
+on:
+  push:
+    branches:
+      - 'feat-**'
+      - 'feature-**'
+      - 'fix-**'
+      - 'bugfix-**'
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3
+      - name: Validate branch name
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          if [[ ! "$BRANCH_NAME" =~ ^(feat|feature|fix|bugfix)- ]]; then
+            echo "❌ Invalid branch name: $BRANCH_NAME"
+            echo "Branch must start with: feat-, feature-, fix-, or bugfix-"
+            exit 1
+          fi
+          
+          echo "✅ Branch name valid: $BRANCH_NAME"
+      
+      - name: Validate commit messages
+        run: |
+          # Get commits in this PR
+          BASE_SHA=${{ github.event.pull_request.base.sha || 'origin/develop' }}
+          HEAD_SHA=${{ github.sha }}
+          
+          echo "Validating commits from $BASE_SHA to $HEAD_SHA"
+          
+          INVALID_COMMITS=0
+          while IFS= read -r commit; do
+            if [[ ! "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore):.+$ ]]; then
+              echo "❌ Invalid commit message: $commit"
+              INVALID_COMMITS=$((INVALID_COMMITS + 1))
+            fi
+          done < <(git log $BASE_SHA..$HEAD_SHA --pretty=format:"%s")
+          
+          if [ $INVALID_COMMITS -gt 0 ]; then
+            echo "❌ Found $INVALID_COMMITS invalid commit messages"
+            echo "Expected format: <type>: <description>"
+            echo "Valid types: feat, fix, docs, style, refactor, test, chore"
+            exit 1
+          fi
+          
+          echo "✅ All commit messages valid"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          branch: main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ All checks passed! Ready for review.'
+            })
+```
+
+**4. Release Branch Automation**
+
+```yaml
+# .github/workflows/release-branch.yml
+name: Release Branch CI
+
+on:
+  push:
+    branches:
+      - 'release-*'
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Validate release branch name
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          if [[ ! "$BRANCH_NAME" =~ ^release-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid release branch name: $BRANCH_NAME"
+            echo "Expected format: release-X.Y.Z (e.g., release-1.2.3)"
+            exit 1
+          fi
+          
+          echo "✅ Release branch name valid: $BRANCH_NAME"
+      
+      - name: Extract version from branch
+        id: extract_version
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          VERSION=${BRANCH_NAME#release-}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+      
+      - name: Run full test suite
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+      
+      - name: Create PR to main
+        if: github.event_name == 'push'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
+          base: main
+          title: "🚀 Release v${{ steps.extract_version.outputs.version }}"
+          body: |
+            ## Release v${{ steps.extract_version.outputs.version }}
+            
+            This PR contains the release branch for version ${{ steps.extract_version.outputs.version }}.
+            
+            ### Pre-merge Checklist
+            - [ ] All tests passing
+            - [ ] Version updated in package.json
+            - [ ] CHANGELOG updated
+            - [ ] QA approval obtained
+            - [ ] Documentation updated
+            
+            ### After Merge
+            - Tag will be created automatically: `v${{ steps.extract_version.outputs.version }}`
+            - GitHub Release will be created
+            - Changes will be merged back to `develop`
+            
+            /cc @release-managers
+          labels: |
+            release
+            high-priority
+```
+
+**5. Hotfix Branch Automation**
+
+```yaml
+# .github/workflows/hotfix-branch.yml
+name: Hotfix Branch CI
+
+on:
+  push:
+    branches:
+      - 'hotfix-*'
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  validate-hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Validate hotfix branch
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          if [[ ! "$BRANCH_NAME" =~ ^hotfix- ]]; then
+            echo "❌ Invalid hotfix branch name: $BRANCH_NAME"
+            exit 1
+          fi
+          
+          # Verify hotfix is based on main
+          BASE_BRANCH=$(git config branch.$BRANCH_NAME.createdfrom || echo "unknown")
+          if [[ "$BASE_BRANCH" != "main" ]]; then
+            echo "⚠️  Warning: Hotfix should be created from main branch"
+          fi
+          
+          echo "✅ Hotfix branch validated: $BRANCH_NAME"
+      
+      - name: Run critical tests
+        run: |
+          npm ci
+          npm run test:critical  # Run only critical test suite for hotfixes
+          npm run build
+      
+      - name: Create urgent PR
+        if: github.event_name == 'push'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref_name }}
+          base: main
+          title: "🚨 HOTFIX: ${{ github.ref_name }}"
+          body: |
+            ## 🚨 Hotfix Required
+            
+            This is an **urgent hotfix** for production.
+            
+            ### Checklist
+            - [ ] Critical tests passing
+            - [ ] Fix verified in production-like environment
+            - [ ] Rollback plan documented
+            - [ ] Team notified
+            
+            ### After Merge
+            - Deploy to production immediately
+            - Merge back to `develop`
+            - Create patch version tag
+            
+            **Priority: URGENT**
+            
+            /cc @on-call-engineer @team-leads
+          labels: |
+            hotfix
+            urgent
+            production
+```
+
+#### Setup Instructions
+
+1. **Create workflow directory**:
+```bash
+mkdir -p .github/workflows
+```
+
+2. **Add workflow files**:
+```bash
+# Copy the above YAML contents into respective files
+# .github/workflows/release.yml
+# .github/workflows/merge-to-develop.yml
+# .github/workflows/feature-branch.yml
+# .github/workflows/release-branch.yml
+# .github/workflows/hotfix-branch.yml
+```
+
+3. **Commit and push workflows**:
+```bash
+git add .github/workflows/
+git commit -m "chore: add GitHub Actions automation workflows
+
+- Automatic version bumping on main push
+- Automatic release creation with changelog
+- Automatic merge back to develop
+- Feature/Release/Hotfix branch CI/CD
+"
+git push origin develop
+```
+
+4. **Configure repository settings**:
+```
+GitHub → Settings → Actions → General
+☑ Allow all actions and reusable workflows
+☑ Allow GitHub Actions to create and approve pull requests
+
+GitHub → Settings → Secrets and variables → Actions
+Add secrets if needed (for external services)
+```
+
+5. **Test the automation**:
+```bash
+# Create a feature branch
+git checkout -b feat-TEST-001-test-automation develop
+echo "test" > test.txt
+git add test.txt
+git commit -m "feat: TEST-001 test automation workflows"
+git push -u origin feat-TEST-001-test-automation
+
+# Check Actions tab in GitHub to see workflows running
+```
+
+#### What Gets Automated
+
+✅ **On every feature branch push**:
+- Branch name validation
+- Commit message validation
+- Linting, testing, building
+- PR comments with results
+
+✅ **On release branch creation**:
+- Version validation
+- Full test suite
+- Auto-create PR to main with checklist
+
+✅ **On hotfix branch creation**:
+- Critical tests run
+- Auto-create urgent PR to main
+- Team notifications
+
+✅ **On push to main**:
+- Automatic version bump calculation (based on commits)
+- Update version files (package.json, VERSION, etc.)
+- Generate changelog from commits
+- Create and push Git tag
+- Create GitHub Release
+- Automatically merge back to develop
+- Handle merge conflicts with auto-PR
+
+#### Customization Options
+
+Edit workflows to match your stack:
+
+```yaml
+# For Python projects
+- name: Setup Python
+  uses: actions/setup-python@v4
+  with:
+    python-version: '3.11'
+- run: pip install -r requirements.txt
+- run: pytest
+
+# For Java/Maven
+- name: Setup Java
+  uses: actions/setup-java@v3
+  with:
+    java-version: '17'
+- run: mvn clean test
+- run: mvn package
+
+# For Docker builds
+- name: Build Docker image
+  run: docker build -t myapp:${{ github.sha }} .
 ```
 
 ### GitLab CI Automation
 
 ```yaml
 # .gitlab-ci.yml
+stages:
+  - validate
+  - test
+  - release
+
+variables:
+  GIT_DEPTH: 0
+
+validate-branch:
+  stage: validate
+  script:
+    - |
+      if [[ ! "$CI_COMMIT_BRANCH" =~ ^(feat|fix|hotfix|release)- ]]; then
+        echo "Invalid branch name"
+        exit 1
+      fi
+  only:
+    - branches
+
+test:
+  stage: test
+  script:
+    - npm ci
+    - npm run lint
+    - npm test
+    - npm run build
+  only:
+    - branches
+    - merge_requests
+
 release:
   stage: release
   only:
@@ -4783,6 +5697,631 @@ pipeline:
             Deployed by: <+pipeline.triggeredBy.name>
             
             Next: Merge hotfix to develop branch
+```
+
+### Harness Git Flow Automation Pipelines
+
+Complete automation for version bumping, release creation, and merging back to develop.
+
+#### Pipeline: Automatic Version Bump and Release
+
+```yaml
+# .harness/pipelines/auto-release.yaml
+pipeline:
+  name: Automatic Release Creation
+  identifier: auto_release_creation
+  projectIdentifier: backend_services
+  orgIdentifier: mycompany
+  tags:
+    automation: release
+    git_flow: main
+  properties:
+    ci:
+      codebase:
+        connectorRef: github_prod
+        repoName: your-org/your-repo
+        build:
+          type: branch
+          spec:
+            branch: main
+  stages:
+    - stage:
+        name: Analyze and Create Release
+        identifier: analyze_create_release
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Setup Git
+                  identifier: setup_git
+                  spec:
+                    shell: Bash
+                    command: |
+                      git config user.name "harness-automation"
+                      git config user.email "automation@harness.io"
+                      git fetch --all --tags
+              
+              - step:
+                  type: Run
+                  name: Get Latest Tag
+                  identifier: get_latest_tag
+                  spec:
+                    shell: Bash
+                    command: |
+                      LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+                      echo "LATEST_TAG=$LATEST_TAG" >> $HARNESS_ENV
+                      echo "Latest release: $LATEST_TAG"
+              
+              - step:
+                  type: Run
+                  name: Analyze Commits for Version Bump
+                  identifier: analyze_version_bump
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      PREV_TAG=$LATEST_TAG
+                      COMMITS=$(git log $PREV_TAG..HEAD --pretty=format:"%s")
+                      
+                      echo "Commits since $PREV_TAG:"
+                      echo "$COMMITS"
+                      echo ""
+                      
+                      # Determine bump type
+                      if echo "$COMMITS" | grep -qE '^(feat|feature)(\(.+\))?!:|^BREAKING CHANGE:'; then
+                        BUMP_TYPE="major"
+                        echo "🚨 Breaking changes detected → MAJOR version bump"
+                      elif echo "$COMMITS" | grep -qE '^(feat|feature)(\(.+\))?:'; then
+                        BUMP_TYPE="minor"
+                        echo "✨ New features detected → MINOR version bump"
+                      else
+                        BUMP_TYPE="patch"
+                        echo "🐛 Bug fixes only → PATCH version bump"
+                      fi
+                      
+                      echo "BUMP_TYPE=$BUMP_TYPE" >> $HARNESS_ENV
+              
+              - step:
+                  type: Run
+                  name: Calculate New Version
+                  identifier: calculate_new_version
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      CURRENT_VERSION=${LATEST_TAG#v}
+                      IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+                      
+                      case "$BUMP_TYPE" in
+                        major)
+                          MAJOR=$((MAJOR + 1))
+                          MINOR=0
+                          PATCH=0
+                          ;;
+                        minor)
+                          MINOR=$((MINOR + 1))
+                          PATCH=0
+                          ;;
+                        patch)
+                          PATCH=$((PATCH + 1))
+                          ;;
+                      esac
+                      
+                      NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+                      echo "NEW_VERSION=$NEW_VERSION" >> $HARNESS_ENV
+                      echo "📦 New version: v$NEW_VERSION"
+              
+              - step:
+                  type: Run
+                  name: Update Version Files
+                  identifier: update_version_files
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      echo "Updating version to $NEW_VERSION in project files..."
+                      
+                      # Update package.json
+                      if [ -f "package.json" ]; then
+                        sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" package.json
+                        echo "✓ Updated package.json"
+                      fi
+                      
+                      # Update pyproject.toml
+                      if [ -f "pyproject.toml" ]; then
+                        sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" pyproject.toml
+                        echo "✓ Updated pyproject.toml"
+                      fi
+                      
+                      # Update Cargo.toml
+                      if [ -f "Cargo.toml" ]; then
+                        sed -i "s/version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+                        echo "✓ Updated Cargo.toml"
+                      fi
+                      
+                      # Update pom.xml (Maven)
+                      if [ -f "pom.xml" ]; then
+                        sed -i "s/<version>.*<\/version>/<version>$NEW_VERSION<\/version>/" pom.xml
+                        echo "✓ Updated pom.xml"
+                      fi
+                      
+                      # Create/Update VERSION file
+                      echo "$NEW_VERSION" > VERSION
+                      echo "✓ Updated VERSION file"
+              
+              - step:
+                  type: Run
+                  name: Generate Changelog
+                  identifier: generate_changelog
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      CHANGELOG_FILE="release-notes-$NEW_VERSION.md"
+                      
+                      cat > $CHANGELOG_FILE <<EOF
+                      # Release v$NEW_VERSION
+                      
+                      Released on $(date +%Y-%m-%d)
+                      
+                      ## Changes Since $LATEST_TAG
+                      
+                      EOF
+                      
+                      # Features
+                      echo "### ✨ Features" >> $CHANGELOG_FILE
+                      git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --grep="^feat" --grep="^feature" >> $CHANGELOG_FILE || echo "No new features" >> $CHANGELOG_FILE
+                      echo "" >> $CHANGELOG_FILE
+                      
+                      # Bug Fixes
+                      echo "### 🐛 Bug Fixes" >> $CHANGELOG_FILE
+                      git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --grep="^fix" >> $CHANGELOG_FILE || echo "No bug fixes" >> $CHANGELOG_FILE
+                      echo "" >> $CHANGELOG_FILE
+                      
+                      # Documentation
+                      echo "### 📚 Documentation" >> $CHANGELOG_FILE
+                      git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --grep="^docs" >> $CHANGELOG_FILE || echo "No documentation changes" >> $CHANGELOG_FILE
+                      echo "" >> $CHANGELOG_FILE
+                      
+                      # Performance
+                      echo "### ⚡ Performance" >> $CHANGELOG_FILE
+                      git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --grep="^perf" >> $CHANGELOG_FILE || echo "No performance improvements" >> $CHANGELOG_FILE
+                      echo "" >> $CHANGELOG_FILE
+                      
+                      # Other
+                      echo "### 🔧 Maintenance" >> $CHANGELOG_FILE
+                      git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --grep="^chore" --grep="^refactor" >> $CHANGELOG_FILE || echo "No maintenance changes" >> $CHANGELOG_FILE
+                      
+                      echo "CHANGELOG_FILE=$CHANGELOG_FILE" >> $HARNESS_ENV
+                      
+                      echo "📝 Generated changelog:"
+                      cat $CHANGELOG_FILE
+              
+              - step:
+                  type: Run
+                  name: Create and Push Git Tag
+                  identifier: create_push_tag
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      TAG_NAME="v$NEW_VERSION"
+                      
+                      # Create annotated tag with changelog
+                      git tag -a "$TAG_NAME" -F "$CHANGELOG_FILE"
+                      
+                      # Push tag using secret token
+                      git push https://<+secrets.getValue("github_token")>@github.com/<+codebase.repoName>.git "$TAG_NAME"
+                      
+                      echo "✅ Created and pushed tag: $TAG_NAME"
+              
+              - step:
+                  type: Run
+                  name: Create GitHub Release
+                  identifier: create_github_release
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      # Using GitHub CLI
+                      export GITHUB_TOKEN="<+secrets.getValue("github_token")>"
+                      
+                      gh release create "v$NEW_VERSION" \
+                        --title "Release v$NEW_VERSION" \
+                        --notes-file "$CHANGELOG_FILE" \
+                        --repo "<+codebase.repoName>"
+                      
+                      echo "✅ GitHub Release created: v$NEW_VERSION"
+              
+              - step:
+                  type: Run
+                  name: Update CHANGELOG.md
+                  identifier: update_changelog_file
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      # Prepend new release notes to CHANGELOG.md
+                      if [ -f "CHANGELOG.md" ]; then
+                        # Create temp file with new content first
+                        cat "$CHANGELOG_FILE" > temp_changelog.md
+                        echo "" >> temp_changelog.md
+                        echo "---" >> temp_changelog.md
+                        echo "" >> temp_changelog.md
+                        cat CHANGELOG.md >> temp_changelog.md
+                        mv temp_changelog.md CHANGELOG.md
+                      else
+                        # Create new CHANGELOG.md
+                        cat > CHANGELOG.md <<EOF
+                      # Changelog
+                      
+                      All notable changes to this project will be documented in this file.
+                      
+                      EOF
+                        cat "$CHANGELOG_FILE" >> CHANGELOG.md
+                      fi
+                      
+                      echo "✅ Updated CHANGELOG.md"
+              
+              - step:
+                  type: Run
+                  name: Commit Version Bump
+                  identifier: commit_version_bump
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      # Add all changed files
+                      git add -A
+                      
+                      # Commit changes
+                      git commit -m "chore: release v$NEW_VERSION [skip ci]
+
+Automated version bump and changelog update.
+
+- Version: v$NEW_VERSION
+- Bump type: $BUMP_TYPE
+- Generated by: Harness Pipeline
+"
+                      
+                      # Push to main
+                      git push https://<+secrets.getValue("github_token")>@github.com/<+codebase.repoName>.git main
+                      
+                      echo "✅ Committed and pushed version bump"
+    
+    - stage:
+        name: Notify Team
+        identifier: notify_team
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Send Slack Notification
+                  identifier: send_slack_notification
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      
+                      # Send Slack notification
+                      curl -X POST "<+secrets.getValue("slack_webhook_url")>" \
+                        -H 'Content-Type: application/json' \
+                        -d "{
+                          \"text\": \"🚀 New Release Created\",
+                          \"blocks\": [
+                            {
+                              \"type\": \"header\",
+                              \"text\": {
+                                \"type\": \"plain_text\",
+                                \"text\": \"📦 Release v$NEW_VERSION\"
+                              }
+                            },
+                            {
+                              \"type\": \"section\",
+                              \"fields\": [
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Version:*\nv$NEW_VERSION\"
+                                },
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Type:*\n$BUMP_TYPE\"
+                                },
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Pipeline:*\n<+pipeline.executionUrl>\"
+                                },
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Branch:*\nmain\"
+                                }
+                              ]
+                            },
+                            {
+                              \"type\": \"actions\",
+                              \"elements\": [
+                                {
+                                  \"type\": \"button\",
+                                  \"text\": {
+                                    \"type\": \"plain_text\",
+                                    \"text\": \"View Release\"
+                                  },
+                                  \"url\": \"https://github.com/<+codebase.repoName>/releases/tag/v$NEW_VERSION\"
+                                },
+                                {
+                                  \"type\": \"button\",
+                                  \"text\": {
+                                    \"type\": \"plain_text\",
+                                    \"text\": \"View Changelog\"
+                                  },
+                                  \"url\": \"https://github.com/<+codebase.repoName>/blob/main/CHANGELOG.md\"
+                                }
+                              ]
+                            }
+                          ]
+                        }"
+                      
+                      echo "✅ Slack notification sent"
+```
+
+#### Pipeline: Automatic Merge Back to Develop
+
+```yaml
+# .harness/pipelines/auto-merge-to-develop.yaml
+pipeline:
+  name: Auto Merge Main to Develop
+  identifier: auto_merge_main_to_develop
+  projectIdentifier: backend_services
+  orgIdentifier: mycompany
+  tags:
+    automation: merge
+    git_flow: synchronization
+  properties:
+    ci:
+      codebase:
+        connectorRef: github_prod
+        repoName: your-org/your-repo
+        build:
+          type: branch
+          spec:
+            branch: main
+  stages:
+    - stage:
+        name: Merge to Develop
+        identifier: merge_to_develop
+        type: CI
+        spec:
+          cloneCodebase: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Setup Git
+                  identifier: setup_git
+                  spec:
+                    shell: Bash
+                    command: |
+                      git config user.name "harness-automation"
+                      git config user.email "automation@harness.io"
+                      git fetch --all
+              
+              - step:
+                  type: Run
+                  name: Checkout Develop
+                  identifier: checkout_develop
+                  spec:
+                    shell: Bash
+                    command: |
+                      git checkout develop
+                      git pull origin develop
+                      echo "Current develop HEAD: $(git rev-parse HEAD)"
+              
+              - step:
+                  type: Run
+                  name: Merge Main into Develop
+                  identifier: merge_main
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      echo "Attempting to merge main into develop..."
+                      
+                      if git merge origin/main --no-ff -m "chore: merge main into develop after release
+
+Automated merge to keep develop in sync with production.
+
+Triggered by: <+pipeline.triggeredBy.name>
+Pipeline: <+pipeline.executionUrl>
+
+[skip ci]
+"; then
+                        echo "MERGE_STATUS=success" >> $HARNESS_ENV
+                        echo "✅ Merge successful"
+                      else
+                        echo "MERGE_STATUS=conflict" >> $HARNESS_ENV
+                        echo "❌ Merge conflict detected"
+                        git merge --abort
+                        exit 1
+                      fi
+              
+              - step:
+                  type: Run
+                  name: Push to Develop
+                  identifier: push_develop
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      if [ "$MERGE_STATUS" = "success" ]; then
+                        git push https://<+secrets.getValue("github_token")>@github.com/<+codebase.repoName>.git develop
+                        echo "✅ Successfully pushed merge to develop"
+                      else
+                        echo "⚠️  Skipping push due to merge failure"
+                        exit 1
+                      fi
+              
+              - step:
+                  type: Run
+                  name: Verify Sync
+                  identifier: verify_sync
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      
+                      # Verify main commits are in develop
+                      MAIN_HEAD=$(git rev-parse origin/main)
+                      
+                      if git merge-base --is-ancestor $MAIN_HEAD develop; then
+                        echo "✅ Develop contains all main commits"
+                        echo "Branches are in sync"
+                      else
+                        echo "⚠️  Warning: Develop may not contain all main commits"
+                      fi
+        
+        when:
+          pipelineStatus: Success
+    
+    - stage:
+        name: Handle Merge Conflict
+        identifier: handle_merge_conflict
+        type: Custom
+        when:
+          pipelineStatus: Failure
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Create Merge Conflict PR
+                  identifier: create_conflict_pr
+                  spec:
+                    shell: Bash
+                    command: |
+                      #!/bin/bash
+                      set -e
+                      
+                      export GITHUB_TOKEN="<+secrets.getValue("github_token")>"
+                      
+                      # Create a new branch for manual merge
+                      MERGE_BRANCH="auto-merge-main-to-develop-$(date +%s)"
+                      
+                      git checkout -b $MERGE_BRANCH develop
+                      
+                      # Attempt merge again (will fail, but we'll push the branch)
+                      git merge origin/main --no-ff || true
+                      
+                      # Push conflict branch
+                      git push https://<+secrets.getValue("github_token")>@github.com/<+codebase.repoName>.git $MERGE_BRANCH
+                      
+                      # Create PR using GitHub CLI
+                      gh pr create \
+                        --repo "<+codebase.repoName>" \
+                        --base develop \
+                        --head $MERGE_BRANCH \
+                        --title "🤖 [MANUAL RESOLUTION] Merge main → develop" \
+                        --body "## ⚠️  Automatic Merge Failed
+                      
+                      The automatic merge from \`main\` to \`develop\` encountered conflicts and requires manual resolution.
+                      
+                      ### Context
+                      - **Source Branch:** \`main\`
+                      - **Target Branch:** \`develop\`
+                      - **Trigger:** Release pushed to main
+                      - **Pipeline:** <+pipeline.executionUrl>
+                      
+                      ### Resolution Steps
+                      1. Checkout this branch: \`git checkout $MERGE_BRANCH\`
+                      2. Resolve conflicts in the marked files
+                      3. Stage resolved files: \`git add <resolved-files>\`
+                      4. Complete merge: \`git commit\`
+                      5. Push and merge this PR
+                      
+                      ### Alternative (Local Resolution)
+                      \`\`\`bash
+                      git fetch origin
+                      git checkout develop
+                      git merge origin/main
+                      # Resolve conflicts
+                      git add .
+                      git commit
+                      git push origin develop
+                      \`\`\`
+                      
+                      /cc @release-team @dev-leads
+                      " \
+                        --label "merge-conflict" \
+                        --label "automated" \
+                        --label "high-priority"
+                      
+                      echo "✅ Created PR for manual conflict resolution"
+              
+              - step:
+                  type: ShellScript
+                  name: Notify Team of Conflict
+                  identifier: notify_conflict
+                  spec:
+                    shell: Bash
+                    command: |
+                      curl -X POST "<+secrets.getValue("slack_webhook_url")>" \
+                        -H 'Content-Type: application/json' \
+                        -d "{
+                          \"text\": \"⚠️  Merge Conflict: Manual Resolution Required\",
+                          \"blocks\": [
+                            {
+                              \"type\": \"header\",
+                              \"text\": {
+                                \"type\": \"plain_text\",
+                                \"text\": \"⚠️  Merge Conflict Detected\"
+                              }
+                            },
+                            {
+                              \"type\": \"section\",
+                              \"text\": {
+                                \"type\": \"mrkdwn\",
+                                \"text\": \"Automatic merge from \`main\` to \`develop\` failed. A PR has been created for manual resolution.\"
+                              }
+                            },
+                            {
+                              \"type\": \"section\",
+                              \"fields\": [
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Pipeline:*\n<+pipeline.executionUrl>\"
+                                },
+                                {
+                                  \"type\": \"mrkdwn\",
+                                  \"text\": \"*Action Required:*\nResolve conflicts and merge PR\"
+                                }
+                              ]
+                            }
+                          ]
+                        }"
 ```
 
 ### Harness Trigger Configurations
