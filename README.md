@@ -15,6 +15,17 @@ A comprehensive, production-ready Git hooks system that enforces Git Flow branch
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Initial Repository Setup & First-Time Configuration](#initial-repository-setup--first-time-configuration)
+  - [Scenario 1: Brand New Local Repository (git init)](#scenario-1-brand-new-local-repository-git-init)
+  - [Scenario 2: Repository Created on Remote (Clone & Setup)](#scenario-2-repository-created-on-remote-clone--setup)
+  - [Scenario 3: Existing Repository with Only Main (Migration)](#scenario-3-existing-repository-with-only-main-migration)
+  - [Using This Repository as a Template](#using-this-repository-as-a-template)
+  - [Common Setup Issues & Solutions](#common-setup-issues--solutions)
+- [Detailed Usage Guide](#detailed-usage-guide)
+  - [Daily Developer Workflow](#daily-developer-workflow)
+  - [Real-World Scenarios](#real-world-scenarios)
+  - [Command Reference](#command-reference)
+  - [Troubleshooting Guide](#troubleshooting-guide)
 - [Understanding Git Flow](#understanding-git-flow)
   - [What is Git Flow?](#what-is-git-flow)
   - [The Branching Model](#the-branching-model)
@@ -247,6 +258,2070 @@ git commit -m "fix: PROJ-456 patch XSS vulnerability"
 
 # Push
 git push origin hotfix-PROJ-456-security-patch
+```
+
+---
+
+## Initial Repository Setup & First-Time Configuration
+
+This section covers how to set up Git Flow in different scenarios: brand new repositories, remote repositories, and existing repositories. If you're starting fresh or migrating an existing project, follow the appropriate scenario below.
+
+### Why This Section Matters
+
+The hooks in this repository **require Git Flow structure** to function properly:
+- A `main` branch (production-ready code)
+- A `develop` branch (integration branch for features)
+- Proper branch creation from correct bases
+- Initial version tags
+
+Without this setup, hooks will block operations and show errors. This section ensures you start correctly.
+
+---
+
+### Scenario 1: Brand New Local Repository (git init)
+
+**Use this when**: You're creating a completely new project from scratch on your local machine.
+
+#### Step 1: Initialize Git Repository
+
+```bash
+# Create project directory
+mkdir my-awesome-project
+cd my-awesome-project
+
+# Initialize Git
+git init
+
+# Verify Git initialization
+git status
+# Output: On branch main (or master)
+```
+
+**Note**: If your default branch is `master`, rename it to `main`:
+```bash
+git branch -m master main
+git config init.defaultBranch main  # For future repos
+```
+
+#### Step 2: Create Initial Commit
+
+```bash
+# Create README or initial files
+echo "# My Awesome Project" > README.md
+echo "node_modules/" > .gitignore
+
+# Stage files
+git add .
+
+# Make initial commit
+git commit -m "chore: INIT-001 initial commit"
+```
+
+**Why this commit message format?**
+- Even initial commits follow conventions
+- `INIT-001` is a placeholder JIRA ID (replace with your actual ticket if you have one)
+- Hooks aren't installed yet, so this won't fail validation
+
+#### Step 3: Create and Tag Main Branch
+
+```bash
+# Ensure you're on main
+git branch
+# Output: * main
+
+# Create initial version tag
+git tag -a v0.1.0 -m "Initial release v0.1.0
+
+This is the first version of the project.
+Contains:
+- Initial project structure
+- README documentation
+- Basic .gitignore
+"
+
+# Verify tag
+git tag
+# Output: v0.1.0
+
+git show v0.1.0
+# Shows tag details and initial commit
+```
+
+**Version Strategy**:
+- `v0.1.0` = Pre-release, initial development
+- `v1.0.0` = First production-ready release
+- Choose based on your project's maturity
+
+#### Step 4: Create Develop Branch
+
+```bash
+# Create develop branch from main
+git checkout -b develop main
+
+# Verify you're on develop
+git branch
+# Output:
+#   main
+# * develop
+
+# Push both branches to establish remote tracking (do this after adding remote in Step 5)
+```
+
+#### Step 5: Add Remote and Push
+
+```bash
+# Create repository on GitHub/GitLab/Bitbucket first
+# Then add remote (replace with your actual URL)
+git remote add origin https://github.com/your-username/my-awesome-project.git
+
+# Verify remote
+git remote -v
+# Output:
+# origin  https://github.com/your-username/my-awesome-project.git (fetch)
+# origin  https://github.com/your-username/my-awesome-project.git (push)
+
+# Push main branch with tags
+git checkout main
+git push -u origin main
+git push origin --tags
+
+# Push develop branch
+git checkout develop
+git push -u origin develop
+```
+
+#### Step 6: Install Git Hooks
+
+```bash
+# Clone git-native-hooks into your repository
+git clone https://github.com/RATEESHK/git-native-hooks.git .githooks
+
+# Remove the .git directory from .githooks (it's not needed)
+rm -rf .githooks/.git
+
+# Run installation script
+./.githooks/install-hooks.sh
+
+# Output will show:
+# ✓ Hooks path set to: .githooks
+# ✓ Made executable: pre-commit
+# ✓ Made executable: commit-msg
+# ... etc
+```
+
+#### Step 7: Commit Hook Installation
+
+```bash
+# You're on develop branch
+git add .githooks
+git commit -m "chore: INIT-002 add Git Flow enforcement hooks"
+git push origin develop
+```
+
+#### Step 8: Create Your First Feature Branch
+
+```bash
+# Ensure develop is up to date
+git checkout develop
+git pull origin develop
+
+# Create feature branch (replace PROJ-123 with your JIRA ticket)
+git checkout -b feat-PROJ-123-setup-project-structure develop
+
+# Verify base branch is set (done automatically by post-checkout hook)
+git config branch.feat-PROJ-123-setup-project-structure.base
+# Output: develop
+
+# Make changes
+mkdir -p src tests docs
+echo "// Main application entry point" > src/index.js
+echo "// Test file" > tests/index.test.js
+
+# Stage and commit (hooks now active!)
+git add .
+git commit -m "feat: PROJ-123 add basic project structure"
+
+# Commit message was auto-populated with "feat: PROJ-123 "
+# Hooks validated branch name and commit message
+
+# Push to remote
+git push -u origin feat-PROJ-123-setup-project-structure
+```
+
+#### Step 9: Verify Everything Works
+
+```bash
+# Test branch naming validation (should fail)
+git checkout develop
+git checkout -b invalid-branch-name develop
+# Output: Error from post-checkout hook about invalid branch name
+
+# Delete bad branch
+git checkout develop
+git branch -D invalid-branch-name
+
+# Test commit message validation (should fail)
+echo "test" > test.txt
+git add test.txt
+git commit -m "bad commit message"
+# Output: Error from commit-msg hook about invalid format
+
+# Undo bad commit
+git reset --soft HEAD~1
+git restore --staged test.txt
+rm test.txt
+```
+
+#### Summary: You Now Have
+
+✅ `main` branch with initial commit and tag (`v0.1.0`)
+✅ `develop` branch for integration
+✅ Both branches pushed to remote with tracking
+✅ Git hooks installed and working
+✅ First feature branch created successfully
+✅ Validated that hooks catch violations
+
+---
+
+### Scenario 2: Repository Created on Remote (Clone & Setup)
+
+**Use this when**: Your team created a repository on GitHub/GitLab/Bitbucket, and you're setting up locally.
+
+#### Step 1: Clone Repository
+
+```bash
+# Clone from remote (replace with your actual URL)
+git clone https://github.com/your-org/existing-project.git
+cd existing-project
+
+# Check existing branches
+git branch -a
+# Output:
+# * main
+#   remotes/origin/HEAD -> origin/main
+#   remotes/origin/main
+```
+
+**Common State**: Repository only has `main` branch, possibly with some commits but no tags.
+
+#### Step 2: Check for Existing Tags
+
+```bash
+# List all tags
+git tag
+
+# If empty output, proceed to create initial tag
+# If tags exist, check latest version:
+git describe --tags --abbrev=0
+# Output: v1.2.3 (or empty if no tags)
+```
+
+#### Step 3A: If No Tags Exist - Create Initial Tag
+
+```bash
+# Ensure you're on main
+git checkout main
+
+# Check git log to see what's already committed
+git log --oneline
+# Output shows existing commits
+
+# Tag the latest commit on main as your starting version
+# Choose version based on project state:
+# - v0.1.0 = Early development
+# - v1.0.0 = If already in production
+
+git tag -a v0.1.0 -m "Initial baseline version v0.1.0
+
+Tagging current state of main branch as baseline
+for Git Flow implementation.
+
+Existing features:
+- (list what's already in the codebase)
+"
+
+# Push tag to remote
+git push origin v0.1.0
+```
+
+#### Step 3B: If Tags Exist - Note Latest Version
+
+```bash
+# If repository already has tags, note the latest
+LATEST_TAG=$(git describe --tags --abbrev=0)
+echo "Latest version: $LATEST_TAG"
+
+# You're ready to proceed - no new tag needed yet
+# Next release will increment from here
+```
+
+#### Step 4: Create Develop Branch
+
+```bash
+# Check if develop already exists remotely
+git branch -a | grep develop
+
+# If develop doesn't exist:
+git checkout main
+git checkout -b develop main
+
+# Push develop to remote
+git push -u origin develop
+
+# Set develop as the default branch on remote (optional but recommended):
+# GitHub: Settings → Branches → Default branch → Change to 'develop'
+# GitLab: Settings → Repository → Default branch → Select 'develop'
+# Bitbucket: Repository settings → Branch management → Main branch → Select 'develop'
+```
+
+**Why create develop from main?**
+- Develop starts from the same point as main
+- All future features branch from develop
+- Main only receives merges from release/hotfix branches
+
+#### Step 5: Install Git Hooks
+
+```bash
+# Ensure you're on develop
+git checkout develop
+
+# Clone hooks into repository
+git clone https://github.com/RATEESHK/git-native-hooks.git .githooks
+
+# Remove unnecessary .git folder
+rm -rf .githooks/.git
+
+# Install hooks
+./.githooks/install-hooks.sh
+
+# Commit hooks to develop
+git add .githooks
+git commit -m "chore: SETUP-001 add Git Flow enforcement hooks"
+git push origin develop
+```
+
+#### Step 6: Configure Branch Protection (Recommended)
+
+Set up branch protection on your Git hosting platform:
+
+**GitHub:**
+```
+Repository → Settings → Branches → Add rule
+
+Branch name pattern: main
+☑ Require pull request reviews before merging
+☑ Require status checks to pass before merging
+☑ Include administrators
+☐ Allow force pushes
+
+Branch name pattern: develop
+☑ Require pull request reviews before merging
+☑ Require status checks to pass before merging
+```
+
+**GitLab:**
+```
+Project → Settings → Repository → Protected Branches
+
+Branch: main
+Allowed to merge: Maintainers
+Allowed to push: No one
+Allowed to force push: ☐
+
+Branch: develop
+Allowed to merge: Developers + Maintainers
+Allowed to push: No one
+```
+
+**Bitbucket:**
+```
+Repository settings → Branch permissions
+
+Branch: main
+Type: No direct writes
+Approvers: 2 required
+
+Branch: develop
+Type: No direct writes
+Approvers: 1 required
+```
+
+#### Step 7: Create First Feature Branch
+
+```bash
+# Checkout develop
+git checkout develop
+git pull origin develop
+
+# Create feature branch (use your actual JIRA ID)
+git checkout -b feat-PROJ-123-add-authentication develop
+
+# Post-checkout hook automatically sets base branch
+git config branch.feat-PROJ-123-add-authentication.base
+# Output: develop
+
+# Make changes
+touch src/auth.js
+git add src/auth.js
+git commit -m "feat: PROJ-123 add authentication module"
+
+# Push to remote
+git push -u origin feat-PROJ-123-add-authentication
+
+# Create Pull Request to develop
+# GitHub: Click "Compare & pull request"
+# Target branch: develop
+# Request reviewers
+```
+
+#### Step 8: Verify Hooks Are Working
+
+```bash
+# Test 1: Try to commit to main (should fail)
+git checkout main
+echo "test" > test.txt
+git add test.txt
+git commit -m "test: TEST-001 this should fail"
+# Output: ✗ ERROR: Cannot commit directly to protected branch 'main'
+
+# Cleanup
+git restore --staged test.txt
+rm test.txt
+
+# Test 2: Try invalid branch name (should fail)
+git checkout develop
+git checkout -b badbranchname develop
+# Output: Error about invalid branch naming
+
+# Cleanup
+git checkout develop
+git branch -D badbranchname
+
+# Test 3: Valid branch and commit (should succeed)
+git checkout -b feat-PROJ-124-test-feature develop
+echo "# Test" > feature.md
+git add feature.md
+git commit -m "feat: PROJ-124 add test feature"
+# Output: ✓ SUCCESS: All pre-commit validations passed
+
+# Cleanup
+git checkout develop
+git branch -D feat-PROJ-124-test-feature
+```
+
+#### Summary: You Now Have
+
+✅ Repository cloned from remote
+✅ `main` branch tagged with initial/current version
+✅ `develop` branch created and pushed
+✅ Branch protection configured (recommended)
+✅ Git hooks installed and enforcing rules
+✅ Ready to create feature branches
+
+---
+
+### Scenario 3: Existing Repository with Only Main (Migration)
+
+**Use this when**: You have an existing project with only a `main`/`master` branch and want to adopt Git Flow.
+
+#### Step 1: Assess Current State
+
+```bash
+# Check current branch
+git branch
+# Output: * main (or * master)
+
+# Check for remote
+git remote -v
+# Output shows remote URL if configured
+
+# Check existing commits
+git log --oneline | head -10
+# Shows recent commit history
+
+# Check for existing tags
+git tag
+# May show existing version tags or be empty
+```
+
+#### Step 2: Create Baseline Tag (If None Exists)
+
+```bash
+# If no tags exist, create one for current state
+git checkout main
+
+# Determine appropriate version:
+# - If already in production: v1.0.0 or current version
+# - If pre-production: v0.5.0 or v0.9.0
+# - If early stage: v0.1.0
+
+git tag -a v1.0.0 -m "Baseline version v1.0.0
+
+Tagged current main branch as baseline before
+implementing Git Flow workflow.
+
+Current state:
+- Production-ready codebase
+- (list major features present)
+"
+
+# If remote exists, push tag
+git push origin v1.0.0
+```
+
+#### Step 3: Create Develop Branch from Main
+
+```bash
+# Create develop from current main
+git checkout -b develop main
+
+# Verify develop is at same commit as main
+git log --oneline main..develop
+# Output should be empty (no commits difference)
+
+git log --oneline develop..main
+# Output should be empty (both at same point)
+
+# Push develop to remote
+git push -u origin develop
+```
+
+#### Step 4: Update Default Branch (Recommended)
+
+**Why?** Developers should work from `develop`, not `main`.
+
+**GitHub**:
+```
+Settings → Branches → Default branch → Change to 'develop' → Update
+
+This changes what branch is shown by default and what new clones check out.
+```
+
+**GitLab**:
+```
+Settings → Repository → Default branch → Select 'develop' → Save changes
+```
+
+**Bitbucket**:
+```
+Repository settings → Branch management → Main branch → Select 'develop'
+```
+
+#### Step 5: Protect Main and Develop
+
+See Step 6 in Scenario 2 for branch protection configuration.
+
+#### Step 6: Install Git Hooks
+
+```bash
+# Switch to develop
+git checkout develop
+
+# Clone hooks
+git clone https://github.com/RATEESHK/git-native-hooks.git .githooks
+rm -rf .githooks/.git
+
+# Install
+./.githooks/install-hooks.sh
+
+# Commit hooks
+git add .githooks
+git commit -m "chore: MIGRATE-001 add Git Flow enforcement hooks
+
+Implementing Git Flow workflow with automated enforcement.
+All future feature development will branch from develop.
+"
+
+# Push to develop
+git push origin develop
+```
+
+#### Step 7: Communicate to Team
+
+**Send team notification** (example):
+
+```
+📢 Important: We're adopting Git Flow! 🎉
+
+Changes effective immediately:
+1. ✅ Default branch is now 'develop' (not main)
+2. ✅ All feature branches must be created from 'develop'
+3. ✅ Branch naming required: feat-JIRA-123-description
+4. ✅ Commit format required: feat: JIRA-123 description
+5. ✅ Direct commits to main/develop are blocked
+
+How to update your local repo:
+$ git fetch origin
+$ git checkout develop
+$ git pull origin develop
+$ ./.githooks/install-hooks.sh  # Install hooks locally
+
+Creating features:
+$ git checkout develop
+$ git checkout -b feat-PROJ-123-your-feature develop
+$ git commit -m "feat: PROJ-123 your description"
+$ git push -u origin feat-PROJ-123-your-feature
+# Then create PR to develop (not main!)
+
+Questions? See README.md or ask in #engineering-help
+
+Happy Git Flowing! 🚀
+```
+
+#### Step 8: Migrate In-Progress Work
+
+**If teammates have open branches from main:**
+
+```bash
+# Developer with feature branch from old main:
+git fetch origin
+
+# Check branch base
+git merge-base feature-branch origin/main
+# Shows commit hash where branch was created
+
+# Check if that commit is in develop
+git branch --contains <commit-hash>
+# If develop is listed, branch is safe to use
+
+# If branch was created before develop existed:
+# Option 1: Rebase onto develop
+git checkout feature-branch
+git rebase origin/develop
+
+# Option 2: Merge develop into feature (not ideal but works)
+git checkout feature-branch
+git merge origin/develop
+
+# Option 3: Cherry-pick commits onto new branch (cleanest)
+git checkout -b feat-PROJ-123-description develop
+git cherry-pick <commit1> <commit2> <commit3>
+git push -u origin feat-PROJ-123-description
+# Delete old branch after verification
+```
+
+#### Step 9: First Release After Migration
+
+When ready for next production release:
+
+```bash
+# Create release branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b release-1.1.0 develop
+
+# Update version numbers in code
+# Edit package.json, version.py, etc.
+# Bump from v1.0.0 to v1.1.0
+
+git add package.json
+git commit -m "chore: REL-110 bump version to 1.1.0"
+
+# Push release branch
+git push -u origin release-1.1.0
+
+# After testing and approval, merge to main
+git checkout main
+git pull origin main
+git merge --no-ff release-1.1.0 -m "Merge release-1.1.0"
+git tag -a v1.1.0 -m "Release version 1.1.0"
+git push origin main
+git push origin v1.1.0
+
+# Merge back to develop
+git checkout develop
+git pull origin develop
+git merge --no-ff release-1.1.0 -m "Merge release-1.1.0 into develop"
+git push origin develop
+
+# Delete release branch
+git branch -d release-1.1.0
+git push origin --delete release-1.1.0
+```
+
+#### Summary: You Successfully Migrated
+
+✅ Baseline tag created for existing code
+✅ `develop` branch created from `main`
+✅ Default branch changed to `develop`
+✅ Branch protection enabled
+✅ Git hooks installed and enforcing
+✅ Team notified and guided
+✅ In-progress work migrated
+✅ Ready for first Git Flow release
+
+---
+
+### Using This Repository as a Template
+
+Want to use git-native-hooks as a starting point for multiple projects? Here's how to set it up as a template and use it.
+
+#### Option 1: GitHub Template Repository
+
+**Setup (One-Time)**:
+
+1. **Fork or Import** this repository to your organization:
+   ```
+   GitHub → Import repository
+   URL: https://github.com/RATEESHK/git-native-hooks
+   Owner: your-org
+   Name: git-flow-template
+   ```
+
+2. **Enable as Template**:
+   ```
+   Repository → Settings → Scroll down to "Template repository"
+   ☑ Template repository
+   ```
+
+3. **Customize Template** (optional):
+   ```bash
+   # Clone your template
+   git clone https://github.com/your-org/git-flow-template.git
+   cd git-flow-template
+   
+   # Remove this README or replace with your own
+   rm README.md
+   echo "# Project Template with Git Flow" > README.md
+   
+   # Add organization-specific configs
+   mkdir -p .github/PULL_REQUEST_TEMPLATE
+   echo "## Changes\n\n## Testing\n\n## Checklist\n- [ ] Tests pass" > .github/PULL_REQUEST_TEMPLATE/pull_request_template.md
+   
+   # Add organization CI/CD configs
+   mkdir -p .github/workflows
+   # Add your CI/CD pipeline files
+   
+   # Customize commands.conf for your tech stack
+   # Edit .githooks/commands.conf
+   
+   # Commit and push
+   git add .
+   git commit -m "chore: customize template for organization"
+   git push origin main
+   ```
+
+**Using the Template**:
+
+When creating a new project:
+
+```
+GitHub → New repository
+Select: "Repository template" → your-org/git-flow-template
+Owner: your-org
+Repository name: new-awesome-project
+Description: My new project
+☑ Private (or Public)
+Click: "Create repository"
+```
+
+**Then clone and set up**:
+
+```bash
+# Clone new repository
+git clone https://github.com/your-org/new-awesome-project.git
+cd new-awesome-project
+
+# Repository already has:
+# ✅ .githooks/ directory
+# ✅ Git Flow structure
+
+# Install hooks
+./.githooks/install-hooks.sh
+
+# Create develop branch (template only has main)
+git checkout -b develop main
+git push -u origin develop
+
+# Tag initial version
+git checkout main
+git tag -a v0.1.0 -m "Initial version"
+git push origin v0.1.0
+
+# Start working
+git checkout develop
+git checkout -b feat-PROJ-001-initialize-project develop
+```
+
+#### Option 2: Script-Based Template
+
+**Create a setup script** in your template repo:
+
+```bash
+# File: setup-new-project.sh
+#!/bin/bash
+
+set -euo pipefail
+
+PROJECT_NAME="${1:-}"
+JIRA_PREFIX="${2:-PROJ}"
+
+if [ -z "$PROJECT_NAME" ]; then
+    echo "Usage: ./setup-new-project.sh <project-name> [JIRA-PREFIX]"
+    echo "Example: ./setup-new-project.sh my-api MYAPI"
+    exit 1
+fi
+
+echo "Setting up new project: $PROJECT_NAME"
+echo "JIRA prefix: $JIRA_PREFIX"
+
+# Create project directory
+mkdir -p "$PROJECT_NAME"
+cd "$PROJECT_NAME"
+
+# Initialize Git
+git init
+git branch -m main
+
+# Copy hooks
+cp -r ../git-flow-template/.githooks .
+rm -rf .githooks/.git
+
+# Create initial files
+cat > README.md <<EOF
+# $PROJECT_NAME
+
+## Description
+[Add project description]
+
+## Setup
+\`\`\`bash
+npm install  # or your package manager
+\`\`\`
+
+## Development
+\`\`\`bash
+git checkout develop
+git checkout -b feat-${JIRA_PREFIX}-XXX-description develop
+\`\`\`
+EOF
+
+cat > .gitignore <<EOF
+node_modules/
+.env
+.DS_Store
+*.log
+.vscode/
+EOF
+
+# Initial commit
+git add .
+git commit -m "chore: INIT-001 initial project setup"
+
+# Create tag
+git tag -a v0.1.0 -m "Initial version v0.1.0"
+
+# Create develop
+git checkout -b develop main
+
+# Install hooks
+./.githooks/install-hooks.sh
+
+echo ""
+echo "✅ Project $PROJECT_NAME initialized!"
+echo ""
+echo "Next steps:"
+echo "  1. Create remote repository on GitHub/GitLab"
+echo "  2. git remote add origin <URL>"
+echo "  3. git push -u origin main"
+echo "  4. git push origin --tags"
+echo "  5. git push -u origin develop"
+echo ""
+```
+
+**Usage**:
+
+```bash
+# Create git-flow-template repository
+mkdir git-flow-template
+cd git-flow-template
+git init
+# Copy .githooks from this repo
+# Add setup-new-project.sh
+git add .
+git commit -m "Template ready"
+
+# Use it to create new projects
+cd ..
+./git-flow-template/setup-new-project.sh my-new-api MYAPI
+cd my-new-api
+# Follow printed instructions
+```
+
+#### Option 3: Manual Copy (Simplest)
+
+For one-off project setup:
+
+```bash
+# In your new project
+cd my-new-project
+git init
+
+# Copy hooks from this repository
+cp -r /path/to/git-native-hooks/.githooks .
+rm -rf .githooks/.git
+
+# Install
+./.githooks/install-hooks.sh
+
+# Set up Git Flow structure (follow Scenario 1)
+```
+
+#### Customization Checklist
+
+After using template, customize for your project:
+
+- [ ] **Update README.md**
+  - Replace generic content with project-specific info
+  - Add setup instructions
+  - Add contribution guidelines
+
+- [ ] **Configure commands.conf**
+  - Uncomment language-specific linters
+  - Add project-specific commands
+  - Set appropriate timeouts
+  - Enable/disable optional checks
+
+- [ ] **Update JIRA Prefix**
+  - Default patterns use `PROJ-123`
+  - Update if your JIRA uses different format
+  - Modify patterns in `.githooks/lib/common.sh` if needed
+
+- [ ] **Set Up CI/CD**
+  - Add GitHub Actions / GitLab CI / Jenkins configs
+  - Configure branch protection
+  - Set up required status checks
+
+- [ ] **Configure Git Remote**
+  - Add origin: `git remote add origin <URL>`
+  - Push main: `git push -u origin main`
+  - Push develop: `git push -u origin develop`
+  - Push tags: `git push origin --tags`
+
+- [ ] **Team Onboarding**
+  - Share repository with team
+  - Add contributors
+  - Provide setup instructions
+  - Schedule Git Flow training session
+
+---
+
+### Common Setup Issues & Solutions
+
+#### Issue 1: "Not in a git repository"
+
+**Symptom**:
+```bash
+./.githooks/install-hooks.sh
+Error: Not in a git repository
+```
+
+**Solution**:
+```bash
+# Initialize Git first
+git init
+
+# Or verify you're in the right directory
+pwd
+ls -la .git
+```
+
+#### Issue 2: "Hook not executable"
+
+**Symptom**:
+```bash
+git commit
+error: cannot run .git/hooks/pre-commit: Permission denied
+```
+
+**Solution**:
+```bash
+# Make hooks executable
+chmod +x .githooks/*
+chmod +x .githooks/lib/*
+
+# Or run install script again
+./.githooks/install-hooks.sh
+```
+
+#### Issue 3: "develop branch doesn't exist"
+
+**Symptom**:
+```bash
+git checkout develop
+error: pathspec 'develop' did not match any file(s) known to git
+```
+
+**Solution**:
+```bash
+# Create develop from main
+git checkout main
+git checkout -b develop main
+
+# Push to remote
+git push -u origin develop
+```
+
+#### Issue 4: "Base branch not configured"
+
+**Symptom**:
+```bash
+git push
+Error: Branch does not have a configured base branch
+```
+
+**Solution**:
+```bash
+# Set base branch manually
+git config branch.feat-PROJ-123-feature.base develop
+
+# Or recreate branch properly
+git checkout develop
+git checkout -b feat-PROJ-123-feature develop
+# Base is set automatically by post-checkout hook
+```
+
+#### Issue 5: "Permission denied (publickey)" when pushing
+
+**Symptom**:
+```bash
+git push origin main
+Permission denied (publickey).
+```
+
+**Solution**:
+```bash
+# Check SSH keys
+ssh -T git@github.com
+
+# Or switch to HTTPS
+git remote set-url origin https://github.com/user/repo.git
+
+# Or generate and add SSH key
+ssh-keygen -t ed25519 -C "your_email@example.com"
+cat ~/.ssh/id_ed25519.pub
+# Add to GitHub/GitLab: Settings → SSH Keys
+```
+
+#### Issue 6: "hooks.maxCommits exceeded"
+
+**Symptom**:
+```bash
+git push
+Error: Branch has 8 commits (limit: 5). Squash commits before pushing.
+```
+
+**Solution**:
+```bash
+# Option 1: Squash commits interactively
+git rebase -i develop
+# Mark commits as 'squash' or 'fixup'
+
+# Option 2: Soft reset and recommit
+git reset --soft develop
+git commit -m "feat: PROJ-123 complete feature description"
+
+# Option 3: Increase limit (if justified)
+git config hooks.maxCommits 10
+```
+
+#### Issue 7: "Branch name doesn't follow Git Flow"
+
+**Symptom**:
+```bash
+git push origin my-feature
+Error: Branch 'my-feature' doesn't follow Git Flow naming
+```
+
+**Solution**:
+```bash
+# Rename branch
+git branch -m my-feature feat-PROJ-123-my-feature
+
+# Or create new branch with correct name
+git checkout develop
+git checkout -b feat-PROJ-123-my-feature develop
+git cherry-pick <commits-from-old-branch>
+git branch -D my-feature
+```
+
+---
+
+## Detailed Usage Guide
+
+This section provides comprehensive day-to-day usage examples, real-world scenarios, and complete workflows for working with Git Flow hooks.
+
+### Daily Developer Workflow
+
+#### Morning: Starting Your Day
+
+```bash
+# 1. Update your local repository
+git checkout develop
+git pull origin develop
+
+# 2. Check for new tags/releases
+git fetch --tags
+git tag | tail -5
+# Shows latest 5 tags
+
+# 3. Review any changes
+git log --oneline origin/develop --since="yesterday" --all
+# Shows commits from yesterday across all branches
+
+# 4. Check your current work
+git branch
+# Lists all local branches (* indicates current)
+
+git status
+# Shows current branch, uncommitted changes
+```
+
+#### Creating a New Feature
+
+**Step-by-step with explanations**:
+
+```bash
+# 1. Ensure develop is current
+git checkout develop
+git pull origin develop
+
+# 2. Create feature branch (replace with your JIRA ticket)
+git checkout -b feat-PROJ-456-add-user-profile develop
+
+# What just happened:
+# - Created new branch from develop
+# - post-checkout hook validated branch name ✓
+# - post-checkout hook set base branch to develop ✓
+# - You're now on feat-PROJ-456-add-user-profile
+
+# 3. Verify base branch is set
+git config branch.feat-PROJ-456-add-user-profile.base
+# Output: develop
+
+# 4. Make changes
+mkdir -p src/components/UserProfile
+touch src/components/UserProfile/UserProfile.jsx
+touch src/components/UserProfile/UserProfile.test.jsx
+
+# 5. Check what changed
+git status
+# Shows untracked files in red
+
+# 6. Stage files
+git add src/components/UserProfile/
+
+# 7. Commit (message auto-populated with feat: PROJ-456 prefix!)
+git commit
+# Editor opens with:
+# feat: PROJ-456 
+# 
+# Enter description after the JIRA ID:
+# feat: PROJ-456 add UserProfile component with tests
+
+# Alternatively, commit in one line:
+git commit -m "feat: PROJ-456 add UserProfile component with tests"
+
+# What just happened:
+# - prepare-commit-msg hook pre-filled "feat: PROJ-456 " ✓
+# - commit-msg hook validated format ✓
+# - pre-commit hook validated branch protection ✓
+# - Commit succeeded!
+
+# 8. Make more changes iteratively
+echo "export const UserProfile = () => <div>Profile</div>" > src/components/UserProfile/UserProfile.jsx
+git add src/components/UserProfile/UserProfile.jsx
+git commit -m "feat: PROJ-456 implement basic UserProfile UI"
+
+# 9. Add tests
+echo "test('renders profile', () => {})" > src/components/UserProfile/UserProfile.test.jsx
+git add src/components/UserProfile/UserProfile.test.jsx
+git commit -m "test: PROJ-456 add UserProfile component tests"
+
+# 10. Push to remote
+git push -u origin feat-PROJ-456-add-user-profile
+
+# What just happened:
+# - pre-push hook validated branch name ✓
+# - pre-push hook counted commits (3 commits < 5 limit) ✓
+# - pre-push hook validated linear history ✓
+# - pre-push hook validated base branch is develop ✓
+# - Push succeeded!
+
+# 11. Create Pull Request
+# GitHub: Navigate to repository → "Compare & pull request" button
+# Base: develop ← Compare: feat-PROJ-456-add-user-profile
+# Add description, request reviewers, link JIRA ticket
+# Click "Create pull request"
+```
+
+#### Working on Feature Over Multiple Days
+
+**Day 1**:
+```bash
+# Start feature
+git checkout develop
+git pull origin develop
+git checkout -b feat-PROJ-789-refactor-api-client develop
+
+# Make changes
+git add src/api/
+git commit -m "feat: PROJ-789 create new API client structure"
+git push -u origin feat-PROJ-789-refactor-api-client
+
+# End of day - push work in progress
+git add .
+git commit -m "feat: PROJ-789 WIP implementing authentication methods"
+git push
+```
+
+**Day 2**:
+```bash
+# Resume work
+git checkout feat-PROJ-789-refactor-api-client
+git pull origin feat-PROJ-789-refactor-api-client
+
+# Continue development
+git add src/api/auth.js
+git commit -m "feat: PROJ-789 complete authentication implementation"
+
+# Sync with develop (if develop has new changes)
+git fetch origin
+git merge origin/develop
+# Or: git rebase origin/develop (cleaner history)
+
+git push
+```
+
+**Day 3** - Cleanup before PR:
+```bash
+# Option 1: Squash all commits into one
+git checkout feat-PROJ-789-refactor-api-client
+git reset --soft develop
+git commit -m "feat: PROJ-789 refactor API client with authentication
+
+Complete rewrite of API client:
+- New modular structure
+- Authentication support
+- Improved error handling
+- Unit tests added
+"
+git push --force-with-lease
+
+# Option 2: Interactive rebase to clean up history
+git rebase -i develop
+# In editor:
+# pick abc123 feat: PROJ-789 create new API client structure
+# squash def456 feat: PROJ-789 WIP implementing authentication methods
+# pick ghi789 feat: PROJ-789 complete authentication implementation
+# Result: 2 commits instead of 3
+
+git push --force-with-lease
+
+# Create PR
+# Ready for review with clean commit history!
+```
+
+#### Responding to PR Feedback
+
+```bash
+# You receive PR review comments requesting changes
+
+# 1. Checkout your feature branch
+git checkout feat-PROJ-456-add-user-profile
+git pull origin feat-PROJ-456-add-user-profile
+
+# 2. Make requested changes
+# Edit files based on feedback
+
+# 3. Commit changes
+git add .
+git commit -m "fix: PROJ-456 address PR feedback - improve error handling"
+
+# 4. Push updates
+git push
+
+# PR automatically updates with new commits
+# Request re-review from reviewers
+```
+
+#### After PR is Merged
+
+```bash
+# Your PR to develop was merged!
+
+# 1. Update develop
+git checkout develop
+git pull origin develop
+# Now develop contains your merged feature
+
+# 2. Delete local feature branch
+git branch -d feat-PROJ-456-add-user-profile
+# -d ensures branch was merged (safe delete)
+
+# 3. Delete remote branch (if not auto-deleted by PR merge)
+git push origin --delete feat-PROJ-456-add-user-profile
+
+# 4. Verify cleanup
+git branch -a
+# Should not show feat-PROJ-456-add-user-profile anymore
+
+# 5. Start next feature
+git checkout -b feat-PROJ-999-next-feature develop
+```
+
+---
+
+### Real-World Scenarios
+
+#### Scenario 1: Emergency Hotfix in Production
+
+**Context**: Critical bug found in production (main branch), must be fixed immediately.
+
+```bash
+# 1. Start from main (production)
+git checkout main
+git pull origin main
+
+# 2. Create hotfix branch
+git checkout -b hotfix-PROJ-911-fix-payment-crash main
+
+# What happened:
+# - post-checkout validated hotfix starts from main ✓
+# - Set base branch to main ✓
+
+# 3. Fix the bug
+# Edit src/payment/processor.js
+git add src/payment/processor.js
+git commit -m "fix: PROJ-911 prevent null pointer in payment processing
+
+Critical fix for production crash:
+- Added null check before processing payment
+- Added error logging
+- Added unit test for null case
+
+Resolves: PROJ-911
+"
+
+# 4. Push hotfix
+git push -u origin hotfix-PROJ-911-fix-payment-crash
+
+# 5. Create PR to main
+# GitHub: Create PR
+# Base: main ← Compare: hotfix-PROJ-911-fix-payment-crash
+# Request urgent review
+
+# 6. After approval, merge to main
+git checkout main
+git merge --no-ff hotfix-PROJ-911-fix-payment-crash -m "Merge hotfix-PROJ-911-fix-payment-crash"
+
+# 7. Tag new version
+git tag -a v2.3.1 -m "Hotfix release v2.3.1
+
+Emergency fix for payment processing crash.
+
+Fixes:
+- PROJ-911: Null pointer in payment processing
+
+See CHANGELOG.md for details.
+"
+
+# 8. Push main and tags
+git push origin main
+git push origin v2.3.1
+
+# 9. Deploy to production
+# Trigger CI/CD pipeline or manual deployment
+# Tag v2.3.1 triggers production deployment
+
+# 10. Merge hotfix back to develop
+git checkout develop
+git pull origin develop
+git merge --no-ff hotfix-PROJ-911-fix-payment-crash -m "Merge hotfix v2.3.1 into develop"
+git push origin develop
+
+# 11. Cleanup
+git branch -d hotfix-PROJ-911-fix-payment-crash
+git push origin --delete hotfix-PROJ-911-fix-payment-crash
+
+# 12. Notify team
+echo "🚨 Hotfix v2.3.1 deployed to production
+Fixed: PROJ-911 payment processing crash
+All feature branches should merge latest develop"
+```
+
+#### Scenario 2: Preparing a Release
+
+**Context**: Sprint is complete, time to prepare v1.5.0 release.
+
+```bash
+# 1. Ensure develop is up to date
+git checkout develop
+git pull origin develop
+
+# 2. Review what's going into release
+git log v1.4.0..develop --oneline
+# Shows all commits since last release
+
+# Or generate changelog
+git log v1.4.0..develop --pretty=format:"- %s" --no-merges
+# Lists all commit messages
+
+# 3. Create release branch
+git checkout -b release-1.5.0 develop
+
+# What happened:
+# - Branch name validated (release-X.Y.Z pattern) ✓
+# - Base branch set to develop ✓
+
+# 4. Bump version numbers
+# Edit package.json
+sed -i 's/"version": "1.4.0"/"version": "1.5.0"/' package.json
+
+# Edit other version files if needed
+# version.py, build.gradle, Info.plist, etc.
+
+git add package.json
+git commit -m "chore: REL-150 bump version to 1.5.0"
+
+# 5. Update CHANGELOG.md
+cat >> CHANGELOG.md <<EOF
+
+## [1.5.0] - $(date +%Y-%m-%d)
+
+### Added
+- PROJ-123: User profile component
+- PROJ-456: Email notification system
+- PROJ-789: API client refactor
+
+### Fixed
+- PROJ-234: Memory leak in background worker
+- PROJ-567: Incorrect date formatting
+
+### Changed
+- Updated dependencies
+- Improved error messages
+EOF
+
+git add CHANGELOG.md
+git commit -m "docs: REL-150 update changelog for v1.5.0"
+
+# 6. Push release branch
+git push -u origin release-1.5.0
+
+# 7. Run full test suite and QA
+# CI/CD runs automated tests
+# QA team performs manual testing
+# Fix any bugs found:
+git add .
+git commit -m "fix: REL-150 address QA findings"
+git push
+
+# 8. After approval, merge to main
+git checkout main
+git pull origin main
+git merge --no-ff release-1.5.0 -m "Merge release-1.5.0"
+
+# 9. Tag release
+git tag -a v1.5.0 -m "Release version 1.5.0
+
+Major features:
+- User profiles with avatar upload
+- Email notifications for important events
+- Refactored API client with better error handling
+
+Bug fixes:
+- Fixed memory leak in background worker
+- Corrected date formatting issues
+
+See CHANGELOG.md for complete list.
+"
+
+# 10. Push main and tags
+git push origin main
+git push origin v1.5.0
+
+# 11. Merge back to develop
+git checkout develop
+git pull origin develop
+git merge --no-ff release-1.5.0 -m "Merge release-1.5.0 into develop"
+git push origin develop
+
+# 12. Delete release branch
+git branch -d release-1.5.0
+git push origin --delete release-1.5.0
+
+# 13. Announce release
+echo "🎉 Version 1.5.0 released!
+See CHANGELOG.md for details
+Tag: v1.5.0
+Deployed to production"
+```
+
+#### Scenario 3: Resolving Merge Conflicts
+
+**Context**: Your feature branch has conflicts with develop.
+
+```bash
+# 1. Update develop and attempt merge
+git checkout develop
+git pull origin develop
+git checkout feat-PROJ-555-new-feature
+git merge develop
+
+# Output:
+# Auto-merging src/utils/helpers.js
+# CONFLICT (content): Merge conflict in src/utils/helpers.js
+# Automatic merge failed; fix conflicts and then commit the result.
+
+# 2. Check conflict status
+git status
+# Output:
+# You have unmerged paths.
+#   (fix conflicts and run "git commit")
+#
+# Unmerged paths:
+#   both modified:   src/utils/helpers.js
+
+# 3. Open conflicted file
+cat src/utils/helpers.js
+# Shows:
+# <<<<<<< HEAD
+# export const format = (value) => value.toUpperCase();
+# =======
+# export const format = (value) => value.toLowerCase();
+# >>>>>>> develop
+
+# 4. Resolve conflict manually
+# Edit src/utils/helpers.js
+# Decide which version to keep or merge both
+# Remove conflict markers (<<<<<<<, =======, >>>>>>>)
+
+# Final version:
+cat > src/utils/helpers.js <<EOF
+export const format = (value, uppercase = true) => {
+  return uppercase ? value.toUpperCase() : value.toLowerCase();
+};
+EOF
+
+# 5. Mark as resolved
+git add src/utils/helpers.js
+
+# 6. Complete merge
+git commit -m "Merge develop into feat-PROJ-555-new-feature
+
+Resolved conflicts in src/utils/helpers.js
+- Combined both approaches with optional parameter
+"
+
+# 7. Push updated branch
+git push
+
+# Alternative: Use rebase instead (cleaner history)
+git checkout feat-PROJ-555-new-feature
+git rebase develop
+
+# If conflicts:
+# 1. Fix conflicts in files
+# 2. git add <resolved-files>
+# 3. git rebase --continue
+# 4. Repeat until rebase complete
+
+git push --force-with-lease
+```
+
+#### Scenario 4: Accidentally Committed to Wrong Branch
+
+**Context**: You committed to `develop` instead of a feature branch.
+
+```bash
+# You're on develop and made commits by mistake
+git log --oneline -3
+# abc123 feat: PROJ-999 oops wrong branch
+# def456 feat: PROJ-999 added feature
+# ghi789 (origin/develop) Previous commit
+
+# Option 1: Move commits to new branch (if not pushed yet)
+git checkout -b feat-PROJ-999-correct-branch develop~2
+# Creates branch from 2 commits before current HEAD
+
+# Reset develop to before your commits
+git checkout develop
+git reset --hard origin/develop
+
+# Now your commits are on correct branch
+git checkout feat-PROJ-999-correct-branch
+git log --oneline -3
+# abc123 feat: PROJ-999 oops wrong branch
+# def456 feat: PROJ-999 added feature
+# ghi789 Previous commit
+
+git push -u origin feat-PROJ-999-correct-branch
+
+# Option 2: If already pushed to develop (BAD SITUATION)
+# Contact team lead immediately!
+# May need to:
+# 1. Revert commits on develop
+git checkout develop
+git revert abc123 def456
+git push origin develop
+
+# 2. Cherry-pick to correct branch
+git checkout -b feat-PROJ-999-correct-branch origin/develop~2
+git cherry-pick def456 abc123
+git push -u origin feat-PROJ-999-correct-branch
+```
+
+#### Scenario 5: Feature Branch Behind Develop
+
+**Context**: Your feature branch is several commits behind develop.
+
+```bash
+# Check how far behind
+git checkout feat-PROJ-777-my-feature
+git fetch origin
+git log --oneline feat-PROJ-777-my-feature..origin/develop
+# Shows commits in develop not in your branch
+
+# Option 1: Merge develop into feature (preserves history)
+git merge origin/develop
+# Resolve conflicts if any
+git push
+
+# Option 2: Rebase onto develop (clean linear history)
+git rebase origin/develop
+# Resolve conflicts if any
+# For each conflict:
+#   1. Fix files
+#   2. git add <files>
+#   3. git rebase --continue
+
+git push --force-with-lease
+# --force-with-lease is safer than --force
+# It prevents overwriting others' changes
+```
+
+#### Scenario 6: Undo Last Commit (Not Pushed)
+
+**Context**: You committed something wrong locally.
+
+```bash
+# Check recent commits
+git log --oneline -3
+
+# Option 1: Undo commit, keep changes staged
+git reset --soft HEAD~1
+# Changes are still staged, ready to re-commit
+
+# Option 2: Undo commit, keep changes unstaged
+git reset HEAD~1
+# Changes are unstaged, files still modified
+
+# Option 3: Undo commit, discard changes (DESTRUCTIVE!)
+git reset --hard HEAD~1
+# Changes are gone forever!
+
+# Option 4: Amend last commit (fix message or add files)
+git add forgotten-file.js
+git commit --amend -m "feat: PROJ-123 corrected commit message"
+```
+
+#### Scenario 7: Undo Pushed Commit (Public History)
+
+**Context**: You pushed a commit that needs to be undone.
+
+```bash
+# DON'T use reset on public branches!
+# Instead, revert (creates new commit that undoes changes)
+
+# Find commit to revert
+git log --oneline -5
+
+# Revert specific commit
+git revert abc123
+# Editor opens for revert commit message
+# Default message: "Revert "feat: PROJ-123 ...""
+
+git push origin feat-PROJ-555-my-feature
+
+# Revert multiple commits
+git revert abc123 def456 ghi789
+git push
+
+# Revert range of commits
+git revert HEAD~3..HEAD
+git push
+```
+
+---
+
+### Command Reference
+
+#### Branch Operations
+
+```bash
+# List all branches
+git branch              # Local branches
+git branch -a           # All branches (local + remote)
+git branch -r           # Remote branches only
+
+# Create branch
+git checkout -b feat-PROJ-123-feature develop
+git checkout -b hotfix-PROJ-456-fix main
+git checkout -b release-1.2.0 develop
+
+# Switch branches
+git checkout develop
+git checkout feat-PROJ-123-feature
+
+# Delete branch
+git branch -d feat-PROJ-123-feature        # Safe delete (must be merged)
+git branch -D feat-PROJ-123-feature        # Force delete
+git push origin --delete feat-PROJ-123-feature  # Delete remote
+
+# Rename branch
+git branch -m old-name new-name
+git branch -m feat-PROJ-123-feature        # Rename current branch
+
+# Check branch base
+git config branch.feat-PROJ-123-feature.base
+git merge-base feat-PROJ-123-feature develop
+```
+
+#### Commit Operations
+
+```bash
+# Stage changes
+git add file.js                  # Stage specific file
+git add src/                     # Stage directory
+git add .                        # Stage all changes
+git add -p                       # Interactive staging
+
+# Commit
+git commit -m "feat: PROJ-123 description"
+git commit                       # Opens editor
+git commit --amend               # Fix last commit
+git commit --amend --no-edit     # Add to last commit, keep message
+
+# View commits
+git log                          # Full log
+git log --oneline                # Compact log
+git log --graph --oneline --all  # Visual graph
+git log -p                       # With diffs
+git log --since="2 weeks ago"    # Recent commits
+git log --author="John"          # By author
+
+# Show commit details
+git show abc123                  # Show specific commit
+git show HEAD                    # Show latest commit
+git diff HEAD~1 HEAD             # Diff between commits
+```
+
+#### Sync Operations
+
+```bash
+# Fetch (download without merging)
+git fetch origin                 # Fetch all branches
+git fetch origin develop         # Fetch specific branch
+git fetch --all --tags           # Fetch everything including tags
+
+# Pull (fetch + merge)
+git pull origin develop
+git pull --rebase origin develop # Pull with rebase
+
+# Push
+git push origin feat-PROJ-123-feature
+git push -u origin feat-PROJ-123-feature  # Set upstream
+git push --force-with-lease      # Safe force push
+git push origin --tags           # Push tags
+git push origin v1.0.0           # Push specific tag
+```
+
+#### Stash Operations
+
+```bash
+# Save work in progress
+git stash                        # Stash changes
+git stash save "WIP: working on auth"
+git stash -u                     # Include untracked files
+
+# List stashes
+git stash list
+# Output:
+# stash@{0}: WIP on feat-PROJ-123: abc123 feat: ...
+# stash@{1}: WIP on develop: def456 feat: ...
+
+# Apply stash
+git stash pop                    # Apply and remove latest
+git stash apply stash@{1}        # Apply specific stash
+git stash drop stash@{0}         # Delete stash
+git stash clear                  # Delete all stashes
+
+# Show stash contents
+git stash show -p stash@{0}
+```
+
+#### Tag Operations
+
+```bash
+# List tags
+git tag                          # All tags
+git tag -l "v1.*"                # Filter tags
+git show v1.0.0                  # Show tag details
+
+# Create tags
+git tag v1.0.0                   # Lightweight tag
+git tag -a v1.0.0 -m "Release 1.0.0"  # Annotated tag
+
+# Push tags
+git push origin v1.0.0           # Push specific tag
+git push origin --tags           # Push all tags
+
+# Delete tags
+git tag -d v1.0.0                # Delete local
+git push origin --delete v1.0.0  # Delete remote
+```
+
+#### Reset Operations
+
+```bash
+# Unstage files
+git restore --staged file.js     # Unstage file
+git reset HEAD file.js           # Alternative
+
+# Discard changes
+git restore file.js              # Discard changes in file
+git checkout -- file.js          # Alternative
+
+# Reset commits
+git reset --soft HEAD~1          # Undo commit, keep changes staged
+git reset HEAD~1                 # Undo commit, keep changes unstaged
+git reset --hard HEAD~1          # Undo commit, discard changes (DANGER!)
+git reset --hard origin/develop  # Reset to match remote
+```
+
+---
+
+### Troubleshooting Guide
+
+#### Problem: Hook Errors After Installation
+
+**Symptoms**:
+- Hooks not executing
+- Permission denied errors
+- "command not found" errors
+
+**Solutions**:
+
+```bash
+# 1. Verify hooks path
+git config core.hooksPath
+# Should output: .githooks
+
+# 2. Check hooks are executable
+ls -la .githooks/
+# Should show 'x' permission: -rwxr-xr-x
+
+# Fix permissions
+chmod +x .githooks/*
+chmod +x .githooks/lib/*
+
+# 3. Verify Bash version
+bash --version
+# Should be 4.3 or higher
+
+# 4. Re-run installation
+./.githooks/install-hooks.sh
+
+# 5. Check logs
+cat .git/hooks-logs/$(date +%Y-%m-%d).log
+```
+
+#### Problem: Branch Naming Validation Failing
+
+**Symptoms**:
+```
+Error: Branch 'my-feature' doesn't follow Git Flow naming convention
+```
+
+**Solution**:
+
+```bash
+# Correct branch naming formats:
+# Features:    feat-PROJ-123-description OR feature-PROJ-123-description
+# Bugfixes:    fix-PROJ-123-description OR bugfix-PROJ-123-description
+# Hotfixes:    hotfix-PROJ-123-description
+# Releases:    release-1.2.3
+# Support:     support-1.x
+
+# Rename branch
+git branch -m my-feature feat-PROJ-123-my-feature
+
+# Or create correct branch
+git checkout develop
+git checkout -b feat-PROJ-123-my-feature develop
+git cherry-pick <commits-from-old-branch>
+git branch -D my-feature
+```
+
+#### Problem: Commit Message Validation Failing
+
+**Symptoms**:
+```
+Error: Commit message doesn't match required format
+Expected: <type>: <JIRA-ID> <description>
+```
+
+**Solution**:
+
+```bash
+# Correct format:
+# <type>: <JIRA-ID> <description>
+
+# Valid types: feat, fix, docs, style, refactor, test, chore
+
+# Examples:
+git commit -m "feat: PROJ-123 add user authentication"
+git commit -m "fix: PROJ-456 resolve memory leak"
+git commit -m "docs: PROJ-789 update API documentation"
+
+# If you made bad commit:
+git commit --amend -m "feat: PROJ-123 correct message format"
+```
+
+#### Problem: Too Many Commits on Branch
+
+**Symptoms**:
+```
+Error: Branch has 8 commits (limit: 5). Squash commits before pushing.
+```
+
+**Solution**:
+
+```bash
+# Option 1: Squash all commits
+git reset --soft develop
+git commit -m "feat: PROJ-123 complete feature implementation
+
+Detailed description of all changes...
+"
+
+# Option 2: Interactive rebase
+git rebase -i develop
+# In editor, change 'pick' to 'squash' for commits to combine
+# Save and close
+
+# Option 3: Increase limit (if justified)
+git config hooks.maxCommits 10
+
+# Push (requires force)
+git push --force-with-lease
+```
+
+#### Problem: Branch Created from Wrong Base
+
+**Symptoms**:
+```
+Error: Feature branch must be created from 'develop', not 'main'
+Error: Hotfix branch must be created from 'main', not 'develop'
+```
+
+**Solution**:
+
+```bash
+# If branch not pushed yet:
+git checkout develop  # or main
+git branch -D feat-PROJ-123-wrong-base
+git checkout -b feat-PROJ-123-correct-base develop
+
+# If branch already pushed:
+# 1. Create correct branch
+git checkout develop
+git checkout -b feat-PROJ-123-correct-base develop
+
+# 2. Cherry-pick commits
+git cherry-pick <commit1> <commit2> <commit3>
+
+# 3. Push correct branch
+git push -u origin feat-PROJ-123-correct-base
+
+# 4. Delete wrong branch
+git branch -D feat-PROJ-123-wrong-base
+git push origin --delete feat-PROJ-123-wrong-base
+```
+
+#### Problem: Non-Linear History (Merge Commits)
+
+**Symptoms**:
+```
+Error: Branch contains merge commits. Use rebase instead of merge.
+```
+
+**Solution**:
+
+```bash
+# Avoid merge commits in feature branches
+# Instead of: git merge develop
+# Use: git rebase develop
+
+# Fix existing merge commits:
+git rebase -i develop
+# Delete lines with merge commits
+# Save and close
+
+git push --force-with-lease
+```
+
+#### Problem: Cannot Push to Protected Branch
+
+**Symptoms**:
+```
+Error: Cannot push directly to protected branch 'main'
+Error: Cannot push directly to protected branch 'develop'
+```
+
+**Solution**:
+
+```bash
+# Protected branches require PRs
+# Don't push directly!
+
+# If you accidentally committed to main/develop:
+git log --oneline -3  # Find your commits
+
+# Move commits to feature branch
+git checkout -b feat-PROJ-123-emergency-fix HEAD
+git push -u origin feat-PROJ-123-emergency-fix
+
+# Reset main/develop
+git checkout main  # or develop
+git reset --hard origin/main  # or origin/develop
+
+# Create PR from feature branch
+```
+
+#### Problem: Hooks Bypass Not Working
+
+**Symptoms**:
+- Need to bypass hooks for emergency
+- `--no-verify` not recognized
+
+**Solution**:
+
+```bash
+# Bypass commit hooks
+git commit --no-verify -m "emergency commit"
+
+# Bypass push hooks  
+git push --no-verify
+
+# Bypass all hooks temporarily
+git config core.hooksPath /dev/null
+# Make your commits/pushes
+git config core.hooksPath .githooks
+
+# Note: Use bypasses only in emergencies!
+# Hooks exist to protect code quality
 ```
 
 ---
